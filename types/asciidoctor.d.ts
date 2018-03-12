@@ -35,9 +35,28 @@ declare namespace AsciiDoctorJs {
     }
   }
 
+  export interface Attributes {
+    [key: string]: string;
+  }
+
   export interface Document extends AbstractBlock {
     node_name: 'document';
     header: Section;
+    getAttributes(): Attributes;
+  }
+
+  export interface ImageAttributes {
+    'default-alt': string;
+    alt: string;
+    target: string;
+  }
+
+  export interface Image extends Block {
+    getAttributes(): ImageAttributes;
+  }
+
+  export interface List extends AbstractBlock {
+
   }
 
   export interface TreeProcessor {
