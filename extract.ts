@@ -1,14 +1,17 @@
 import {
   allBuiltinsAttributeKeys,
-  nonLocalizableBuiltinAttributeKeys
+  nonLocalizableBuiltinAttributeKeys,
 } from './attributes';
+import {
+  isNil,
+} from './opal-utils';
 import AbstractBlock = AsciiDoctorJs.AbstractBlock;
 import Block = AsciiDoctorJs.Block;
 import Cell = AsciiDoctorJs.Cell;
 import Document = AsciiDoctorJs.Document;
 import Image = AsciiDoctorJs.Image;
 import ImageAttributes = AsciiDoctorJs.ImageAttributes;
-import Section = AsciiDoctorJs.Section;
+import ListItem = AsciiDoctorJs.ListItem;
 import Table = AsciiDoctorJs.Table;
 
 export interface Extraction {
@@ -33,13 +36,37 @@ export function allBuiltinsAttributeFilter(key: string) {
   return (-1 === allBuiltinsAttributeKeys.indexOf(key));
 }
 
-export function extract(block: AbstractBlock, options: ExtractOptions={}): Extraction[] {
+function extend(base: ExtractFunction, sub: ExtractFunction): ExtractFunction {
+  return (block: AbstractBlock) => [
+    ...base(block),
+    ...sub(block),
+  ];
+}
+
+function extractAbstractBlock(block: AbstractBlock): Extraction[] {
+  const extractions: Extraction[] = [];
+  const title = block.getTitle();
+  if (!isNil(title) && title !== '') {
+    extractions.push({
+      text: title,
+    });
+  }
+  return extractions;
+}
+
+const extractVerbatimBlock = extend(extractAbstractBlock, (block) => {
+  const literal = block as Block;
+  return [{
+    text: literal.getSource(),
+  }];
+});
+
+export function extract(block: AbstractBlock, options: ExtractOptions= {}): Extraction[] {
   const ignore = (block: AbstractBlock) => [];
 
   const extractMap: ExtractMap = {
-    dlist: (block) => {
-      return [];
-    },
+    admonition: extractAbstractBlock,
+    dlist: extractAbstractBlock,
     document: (block) => {
       const document = block as Document;
       const attributes = document.getAttributes();
@@ -71,19 +98,30 @@ export function extract(block: AbstractBlock, options: ExtractOptions={}): Extra
       });
       return extractions;
     },
-    paragraph: (block) => {
+    list_item: (block) => {
+      const li = block as ListItem;
+      const text = li.text;
+      if (isNil(text) || text === '') {
+        return [];
+      }
+      return [{
+        text,
+      }];
+    },
+    listing: extractVerbatimBlock,
+    literal: extractVerbatimBlock,
+    olist: extractAbstractBlock,
+    page_break: ignore,
+    paragraph: extend(extractAbstractBlock, (block) => {
       const paragraphBlock = block as Block;
       return [{
-        text: paragraphBlock.lines.join('\n'),
+        text: paragraphBlock.getSource(),
       }];
-    },
-    section: (block) => {
-      const section = block as Section;
-      return [{
-        text: section.title,
-      }];
-    },
-    table: (block) => {
+    }),
+    quote: extractAbstractBlock,
+    section: extractAbstractBlock,
+    sidebar: extractAbstractBlock,
+    table: extend(extractAbstractBlock, (block) => {
       const table = block as Table;
       const rowsKeys: (keyof Table['rows'])[] = ['head', 'body', 'foot'];
       return rowsKeys.reduce((extractions, key) => {
@@ -95,9 +133,11 @@ export function extract(block: AbstractBlock, options: ExtractOptions={}): Extra
           }));
         }, [] as Extraction[]));
       }, [] as Extraction[]);
-    },
-    page_break: ignore,
+    }),
+    thematic_break: ignore,
     toc: ignore,
+    ulist: extractAbstractBlock,
+    verse: extractVerbatimBlock,
   };
 
   const extraction = (() => {
@@ -109,13 +149,22 @@ export function extract(block: AbstractBlock, options: ExtractOptions={}): Extra
     return extract(block);
   })();
 
-  const childExtractions = extractBlocks(block.blocks, options={});
+  const childExtractions = extractBlocks(block.getBlocks(), options = {});
 
   return extraction.concat(childExtractions);
 }
 
-export function extractBlocks(blocks: AbstractBlock[], options?: ExtractOptions): Extraction[] {
-  return blocks.reduce((extractions: Extraction[], block: AbstractBlock) => {
+function isArrayOfBlocks(value: any): value is AbstractBlock[] {
+  return Array.isArray(value);
+}
+
+export function extractBlocks(blocks: Array<AbstractBlock | AbstractBlock[]>,
+                              options?: ExtractOptions): Extraction[] {
+  return blocks.reduce((extractions: Extraction[], block: AbstractBlock | AbstractBlock[]) => {
+    // Oddly, the blocks of a dlist are arrays of arrays of blocks...
+    if (isArrayOfBlocks(block)) {
+      return extractions.concat(extractBlocks(block, options));
+    }
     return extractions.concat(extract(block, options));
   }, []);
 }

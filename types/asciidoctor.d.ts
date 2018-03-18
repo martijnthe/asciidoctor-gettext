@@ -4,20 +4,21 @@ declare namespace AsciiDoctorJs {
   }
 
   export interface AbstractNode {
+    // Using node_name, getNodeName() doesn't seem to exist...?
     node_name: string;
   }
 
   export interface AbstractBlock extends AbstractNode {
-    blocks: AbstractBlock[];
+    getBlocks(): AbstractBlock[];
+    getTitle(): string;
   }
 
   export interface Block extends AbstractBlock {
-    lines: string[];
+    getSource(): string;
   }
 
   export interface Section extends AbstractBlock {
     node_name: 'section';
-    title: string;
   }
 
   export interface Cell extends AbstractNode {
@@ -27,7 +28,6 @@ declare namespace AsciiDoctorJs {
 
   export interface Table extends AbstractBlock {
     node_name: 'table';
-    title: string;
     rows: {
       body: Cell[][];
       foot: Cell[][];
@@ -55,8 +55,8 @@ declare namespace AsciiDoctorJs {
     getAttributes(): ImageAttributes;
   }
 
-  export interface List extends AbstractBlock {
-
+  export interface ListItem extends AbstractBlock {
+    text: string;
   }
 
   export interface TreeProcessor {
