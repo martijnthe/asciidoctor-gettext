@@ -25,6 +25,11 @@
     "tslint-config-standard": "^7.0.0",
     "typescript": "^2.7.2"
   },
+  "files": [
+    "bin/*",
+    "dist/*.js",
+    "dist/*.d.ts"
+  ],
   "scripts": {
     "lint": "tslint -p .",
     "prepare": "tsc",

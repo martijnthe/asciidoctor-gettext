@@ -17,6 +17,12 @@ jobs:
     - stage: test
       script: yarn test
     - stage: deploy
-      env: TEST_SUITE=none
-      install: skip
-      script: echo "TODO"
+      script:
+        - echo "Deploying to npm..."
+        - yarn
+      deploy:
+        provider: npm
+        skip_cleanup: true
+        email: "post@martijnthe.nl"
+        api_key: "480fa7ea-5544-43ef-9153-6a9c002566c1"
+        tag: next
