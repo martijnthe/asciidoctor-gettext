@@ -1,6 +1,6 @@
 {
   "name": "asciidoctor-gettext",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "gettext/po string extraction tool for asciidoc documents",
   "keywords": [
     "adoc",
