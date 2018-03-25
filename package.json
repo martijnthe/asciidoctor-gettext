@@ -16,6 +16,7 @@
     "translation"
   ],
   "homepage": "https://github.com/martijnthe/asciidoctor-gettext",
+  "repository": "github:martijnthe/asciidoctor-gettext",
   "main": "dist/index.js",
   "author": "post@martijnthe.nl",
   "license": "MIT",
