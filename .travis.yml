@@ -1,28 +1,30 @@
 before_install:
-  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.5.1
-  - export PATH="$HOME/.yarn/bin:$PATH"
+- curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.5.1
+- export PATH="$HOME/.yarn/bin:$PATH"
 install:
-  - yarn
+- yarn
 language: node_js
 node_js:
-  - "9"
+- '9'
 cache:
   yarn: true
 jobs:
   include:
-    - stage: lint
-      script: yarn lint
-    - stage: build
-      script: yarn prepare
-    - stage: test
-      script: yarn test
-    - stage: deploy
-      script:
-        - echo "Deploying to npm..."
-        - yarn
-      deploy:
-        provider: npm
-        skip_cleanup: true
-        email: "post@martijnthe.nl"
-        api_key: "480fa7ea-5544-43ef-9153-6a9c002566c1"
-        tag: next
+  - stage: lint
+    script: yarn lint
+  - stage: build
+    script: yarn prepare
+  - stage: test
+    script: yarn test
+  - stage: deploy
+    script:
+    - echo "Deploying to npm..."
+    - yarn
+    deploy:
+      provider: npm
+      skip_cleanup: true
+      email: post@martijnthe.nl
+      api_key:
+        secure: pqedg4EY6KhqVUNmWWGidnkwsPdGbVbg7o7FlfRYLMM+uUj4tD0nwLvdEsL6BUmZdlhTW7JBjZrDkZxAqfeSf6goMS4bTyReXV1EtlSwzElbZfM1M5SRtdUNfGW4GrtXOLQmYM3mjyOZrT1LGRs7wP9aAy6Yy3LShlIjBZytJFI8q1k3r7bj1/LjG9bGwYThwfZ5c2k2Mlhvtd42rXRy7dcfrCx21pb4Lct8Rf7+iF02wkAL9yMgtO+VJt2j5Aew+DgS+n/f5LtecG53o6G51/YJ7Felx/I+k5u0gYpsVEdQ/pvoMnUbZZ0fQ40HhDN/4J5lT/Ec0Z5vM1vNTGu7Ig11YlngwdRqjMYZciBHTvHPGUk9VQWSR1v5MzD3x/ytG9hn8CoobbAnfcfe02Y3Dznze7pSZKxzeV9QIGMi1OFzTXYodYFlBu5aebDYHYe2nxx2N7Tj8A5XLOe204/Tqnbuk7aXxogUc7O8VbfmPMp6N6JkEV72wwgMXk//H/8YHCfzfFy+lOyMdMhq78ACM5yG4Ih8pC26HiwxAj6RAFAVjooJZqu91c14S9+Clfn+MOW4r8V2P1/hDL7rFblLQT01wsyDm0AQQvu3jwDJUtZWJI0qF3RkK37IiiX+U3Aggrx3j2HjJTkAUmbgj2RUcVVocF5hC/E7o5p/HfQhN1Q=
+      on:
+        tags: true
