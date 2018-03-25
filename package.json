@@ -1,6 +1,6 @@
 {
   "name": "asciidoctor-gettext",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "gettext/po string extraction tool for asciidoc documents",
   "main": "index.js",
   "author": "post@martijnthe.nl",
