@@ -15,7 +15,9 @@ jobs:
   - stage: build
     script: yarn prepare
   - stage: test
-    script: yarn test
+    script:
+    - yarn test
+    - yarn coveralls:upload
   - stage: deploy
     script:
     - echo "Deploying to npm..."
