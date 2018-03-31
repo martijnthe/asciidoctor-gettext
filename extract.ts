@@ -45,7 +45,7 @@ function extend(base: ExtractFunction, sub: ExtractFunction): ExtractFunction {
 
 function extractAbstractBlock(block: AbstractBlock): Extraction[] {
   const extractions: Extraction[] = [];
-  const title = block.getTitle();
+  const title = block.title;
   if (!isNil(title) && title !== '') {
     extractions.push({
       text: title,
@@ -118,6 +118,7 @@ export function extract(block: AbstractBlock, options: ExtractOptions= {}): Extr
         text: paragraphBlock.getSource(),
       }];
     }),
+    preamble: extractAbstractBlock,
     quote: extractAbstractBlock,
     section: extractAbstractBlock,
     sidebar: extractAbstractBlock,

@@ -10,7 +10,8 @@ declare namespace AsciiDoctorJs {
 
   export interface AbstractBlock extends AbstractNode {
     getBlocks(): AbstractBlock[];
-    getTitle(): string;
+    // Using title, not getTitle() because getTitle() encodes to HTML Entities.
+    title: string;
   }
 
   export interface Block extends AbstractBlock {

@@ -33,6 +33,29 @@ describe('extract', () => {
     ]);
   });
 
+  it('does not escape to HTML entities', () => {
+    const document = adoc('== Tom & Jerry <>\n');
+    expect(extract(document, options)).toEqual([
+      { text: 'Tom & Jerry <>' },
+    ]);
+  });
+
+  it('extracts preamble', () => {
+    const document = adoc('= Title\nPreamble Header\n\nPreamble Body.\n\n== Section Title');
+    expect(extract(document, options)).toEqual([
+      // I'm not sure why asciidoctor.js emits dupes and a '1'... :-S
+      { text: 'Title' },
+      { text: 'Preamble' },
+      { text: 'PH' },
+      { text: 'Header' },
+      { text: 'Preamble Header' },
+      { text: 1 },
+      { text: 'Preamble Header' },
+      { text: 'Preamble Body.' },
+      { text: 'Section Title' },
+    ]);
+  });
+
   it('extracts inline images', () => {
     const document = adoc('image:logo.svg[]\n');
     expect(extract(document, options)).toEqual([
