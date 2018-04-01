@@ -50,10 +50,9 @@
     "coveralls:upload": "cat ./coverage/lcov.info | coveralls",
     "lint": "tslint -p .",
     "prepare": "tsc",
-    "test": "jest"
+    "test": "jest --collectCoverage"
   },
   "jest": {
-    "collectCoverage": true,
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
