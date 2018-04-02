@@ -65,5 +65,25 @@ describe('asciidoctor-gettext', () => {
       expect(ret.status).toEqual(0);
       expect(ret.stdout).not.toMatch('Table of Contents');
     });
+    it('fails for an invalid ignore pattern', () => {
+      const ret = run([
+        'gettextize', '-m', fixture,
+        '-i', '(',
+      ]);
+      expect(ret.status).toEqual(1);
+      expect(ret.stderr).toMatch(`Error in --ignore regular expression "("
+Invalid regular expression: /(/: Unterminated group`);
+    });
+    it('ignores patterns on a line-per-line basis', () => {
+      const ret = run([
+        'gettextize', '-m', fixture,
+        '-i', 'Lorem ipsum',
+        '-i', 'Consectetuer adipiscing',
+      ]);
+      expect(ret.status).toEqual(0);
+      expect(ret.stdout).not.toMatch('Lorem');
+      expect(ret.stdout).not.toMatch('Consectetuer');
+      expect(ret.stdout).toMatch('Aenean massa.');
+    });
   });
 });

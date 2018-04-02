@@ -4,6 +4,7 @@ import {
   TranslationEntry, TranslationObject,
   Translations,
 } from 'gettext-parser';
+import { blacklist } from './blacklist';
 import { collate } from './collate';
 
 export interface HeaderInfo {
@@ -34,8 +35,10 @@ export function translationsFromExtractions(extractions: Extraction[]): Translat
 
 export function translationObjectFromExtractions(
   extractions: Extraction[],
-  headerInfo: HeaderInfo = {}): TranslationObject {
-  const collated = collate(extractions);
+  headerInfo: HeaderInfo = {},
+  blacklistRegexes: RegExp[] = []): TranslationObject {
+  const filtered = blacklist(extractions, blacklistRegexes);
+  const collated = collate(filtered);
   const project = headerInfo.project || 'untitled';
   const projectVersion = headerInfo.projectVersion || '1.0';
   const headers: TranslationObject['headers'] = {

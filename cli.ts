@@ -6,6 +6,21 @@ import { po } from 'gettext-parser';
 import { translationObjectFromExtractions } from './adapter';
 import { writeFileSync } from 'fs';
 
+function getBlacklistRegexes(program: Command) {
+  const blacklistRegexes = (program.ignore as string[]).map((pattern) => {
+    try {
+      return RegExp(pattern);
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        process.stderr.write(`Error in --ignore regular expression "${pattern}"\n${e.message}`);
+        process.exit(1);
+      }
+      throw e;
+    }
+  });
+  return blacklistRegexes;
+}
+
 export function gettextizeAction(program: Command) {
   if (!program.master) {
     program.help();
@@ -16,11 +31,12 @@ export function gettextizeAction(program: Command) {
   const extractions = extract(document, {
     attributeFilter: program.builtinAttrs ? undefined : allBuiltinsAttributeFilter,
   });
+  const blacklistRegexes = getBlacklistRegexes(program);
   const translationObject = translationObjectFromExtractions(extractions, {
     project: program.packageName,
     projectVersion: program.packageVersion,
     bugsEmailAddress: program.bugsEmailAddress,
-  });
+  }, blacklistRegexes);
   const poBuffer = po.compile(translationObject);
   if (program.po) {
     writeFileSync(program.po, poBuffer, { encoding: 'utf8' });
@@ -30,6 +46,11 @@ export function gettextizeAction(program: Command) {
 }
 
 export function cli(argv: string[], stdout: WriteStream= process.stdout) {
+  function collect(val: string, memo: string[]) {
+    memo.push(val);
+    return memo;
+  }
+
   const program = new Command();
   program
     .description('gettext/po string extraction tool for asciidoc documents');
@@ -42,6 +63,8 @@ export function cli(argv: string[], stdout: WriteStream= process.stdout) {
     .option('-p, --po <path>',
       `File where the message catalog should be written. If not given, \
 the message catalog will be written to the standard output.`)
+    .option('-i, --ignore <regex>',
+      'RegEx pattern of lines that should be ignored.', collect, [])
     .option('--no-builtin-attrs',
       'Do not extract asciidoctor-builtin attributes.', false)
     .option('--package-name <string>',
