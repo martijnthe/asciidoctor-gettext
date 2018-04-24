@@ -309,4 +309,8 @@ ifdef::revnumber[Asciidoc looks for the last ] in the string]
     expect(extract(document, options)).toEqual([]);
   });
 
+  it('ignores include::...[]', () => {
+    const document = adoc('include::bar.adoc[]\n');
+    expect(extract(document, options)).toEqual([]);
+  });
 });
