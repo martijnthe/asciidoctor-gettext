@@ -253,6 +253,42 @@ console.log('hello, world');
     ]);
   });
 
+  it('extracts everything within conditionals', () => {
+    const document = adoc(`ifeval::[1<=0]
+Unreachable
+endif::[]
+
+ifdef::env-github[]
+This content is for GitHub only.
+endif::env-github[]
+
+ifndef::env-github[]
+This content is NOT for GitHub.
+endif::[]
+
+ifdef::revnumber[This document has a version number of {revnumber}.]
+
+ifdef::revnumber[Asciidoc looks for the last ] in the string]
+`);
+    expect(extract(document, options)).toEqual([
+      {
+        text: 'Unreachable',
+      },
+      {
+        text: 'This content is for GitHub only.',
+      },
+      {
+        text: 'This content is NOT for GitHub.',
+      },
+      {
+        text: 'This document has a version number of {revnumber}.',
+      },
+      {
+        text: 'Asciidoc looks for the last ] in the string',
+      },
+    ]);
+  });
+
   it('ignores comments', () => {
     const document = adoc('// a single line comment\n////\n a multi\nline comment\n////');
     expect(extract(document, options)).toEqual([]);

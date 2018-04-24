@@ -1,4 +1,15 @@
 declare namespace AsciiDoctorJs {
+  export interface Reader {
+    lines: string[];
+  }
+
+  export interface PreproccesorReader extends Reader {
+  }
+
+  export class Preprocessor {
+    process(callback: (document: Document, reader: PreproccesorReader) => void): void;
+  }
+
   export interface Parser {
 
   }
@@ -66,6 +77,7 @@ declare namespace AsciiDoctorJs {
 
   export interface Registry {
     treeProcessor(callback: (this: TreeProcessor) => void): void;
+    preprocessor(callback: (this: Preprocessor) => void): void;
   }
 
   export interface Options {
@@ -84,6 +96,7 @@ declare namespace AsciiDoctorJs {
     Parser: Parser,
     Extensions: {
       create(): Registry;
+      register(callback: (this: Registry) => void): void;
     }
   };
 }
