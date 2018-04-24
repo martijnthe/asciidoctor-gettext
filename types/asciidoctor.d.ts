@@ -10,6 +10,11 @@ declare namespace AsciiDoctorJs {
     process(callback: (document: Document, reader: PreproccesorReader) => void): void;
   }
 
+  export class IncludeProcessor {
+    handles(callback: (target: string) => boolean): void;
+    process(callback: (document: Document, reader: PreproccesorReader, target: string, attributes: Attributes) => void): void;
+  }
+
   export interface Parser {
 
   }
@@ -77,6 +82,7 @@ declare namespace AsciiDoctorJs {
 
   export interface Registry {
     treeProcessor(callback: (this: TreeProcessor) => void): void;
+    includeProcessor(callback: (this: IncludeProcessor) => void): void;
     preprocessor(callback: (this: Preprocessor) => void): void;
   }
 
