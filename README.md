@@ -13,3 +13,16 @@ gettext/po string extraction tool for asciidoc documents.
 ## THIS IS WORK IN PROGRESS
 
 Use at your own risk ;P
+
+## Extracting
+
+Basic example
+```
+$ asciidoctor-gettext gettextize -m path/to/master.adoc -p output.pot 
+```
+
+This will extract all texts from `master.adoc` and create `output.pot`.
+
+## Injecting Translations
+
+TODO
