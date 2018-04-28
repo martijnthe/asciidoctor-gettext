@@ -5,6 +5,7 @@ import { allBuiltinsAttributeFilter, extract } from './extract';
 import { po } from 'gettext-parser';
 import { translationObjectFromExtractions } from './adapter';
 import { writeFileSync } from 'fs';
+import Attributes = AsciiDoctorJs.Attributes;
 
 function getBlacklistRegexes(program: Command) {
   const blacklistRegexes = (program.ignore as string[]).map((pattern) => {
@@ -21,13 +22,34 @@ function getBlacklistRegexes(program: Command) {
   return blacklistRegexes;
 }
 
+function getAttributes(program: Command): Attributes {
+  return (program.attribute as string[]).reduce((attributes: Attributes, arg) => {
+    const splitArg = arg.split('=');
+    if (splitArg.length !== 2) {
+      process.stderr.write(
+        `Error in --attribute "${arg}", format must be "name=value"`);
+      process.exit(1);
+    }
+    const [name, value] = splitArg;
+    if (name.length === 0) {
+      process.stderr.write(
+        `Error in --attribute "${arg}", missing name`);
+      process.exit(1);
+    }
+    attributes[name] = value;
+    return attributes;
+  }, {});
+}
+
 export function gettextizeAction(program: Command) {
   if (!program.master) {
     program.help();
     return;
   }
 
-  const document = asciidoctor.loadFile(program.master, {});
+  const document = asciidoctor.loadFile(program.master, {
+    attributes: getAttributes(program),
+  });
   const extractions = extract(document, {
     attributeFilter: program.builtinAttrs ? undefined : allBuiltinsAttributeFilter,
   });
@@ -58,6 +80,8 @@ export function cli(argv: string[], stdout: WriteStream= process.stdout) {
   program
     .command('gettextize')
     .description('Extracts texts from asciidoc file and generates a .pot file')
+    .option('-a, --attribute <name=value>',
+      'Define an attribute.', collect, [])
     .option('-m, --master <path>',
       'File containing the master document to translate.')
     .option('-p, --po <path>',

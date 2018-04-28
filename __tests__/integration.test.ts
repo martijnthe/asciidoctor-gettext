@@ -85,5 +85,33 @@ Invalid regular expression: /(/: Unterminated group`);
       expect(ret.stdout).not.toMatch('Consectetuer');
       expect(ret.stdout).toMatch('Aenean massa.');
     });
+    it('fails for invalid attribute', () => {
+      const ret = run([
+        'gettextize', '-m', fixture,
+        '-a', 'var1',
+      ]);
+      expect(ret.status).toEqual(1);
+      expect(ret.stderr).toMatch('Error in --attribute');
+    });
+    it('fails for missing attribute name', () => {
+      const ret = run([
+        'gettextize', '-m', fixture,
+        '-a', '=value',
+      ]);
+      expect(ret.status).toEqual(1);
+      expect(ret.stderr).toMatch('Error in --attribute');
+    });
+    it('can pass variables', () => {
+      const ret = run([
+        'gettextize', '-m', fixture,
+        '-a', 'var1=abc',
+        '--attribute', 'var2=xyz',
+      ]);
+      expect(ret.status).toEqual(0);
+      // The fixture contains an include directive that contains attributes.
+      // If the attributes are not properly set, a "Unresolved directive ..."
+      // message is emitted in the output.
+      expect(ret.stdout).not.toMatch('Unresolved directive');
+    });
   });
 });
