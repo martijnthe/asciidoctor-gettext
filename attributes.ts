@@ -1,4 +1,5 @@
 export const nonLocalizableBuiltinAttributeKeys = [
+  'authorcount',
   'asciidoctor',
   'asciidoctor-version',
   'attribute-missing',
@@ -56,6 +57,7 @@ export const allBuiltinsAttributeKeys = [
   'last-update-label',
   'manname-title',
   'note-caption',
+  'part-refsig',
   'section-refsig',
   'table-caption',
   'tip-caption',

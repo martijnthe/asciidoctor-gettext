@@ -43,13 +43,11 @@ describe('extract', () => {
   it('extracts preamble', () => {
     const document = adoc('= Title\nPreamble Header\n\nPreamble Body.\n\n== Section Title');
     expect(extract(document, options)).toEqual([
-      // I'm not sure why asciidoctor.js emits dupes and a '1'... :-S
       { text: 'Title' },
       { text: 'Preamble' },
       { text: 'PH' },
       { text: 'Header' },
       { text: 'Preamble Header' },
-      { text: 1 },
       { text: 'Preamble Header' },
       { text: 'Preamble Body.' },
       { text: 'Section Title' },
@@ -132,8 +130,8 @@ item two::
       { text: 'Figure' },
       { text: 'Table' },
       { text: 'Table of Contents' },
-      { text: 'NAME' },
       { text: 'Section' },
+      { text: 'Part' },
       { text: 'Chapter' },
       { text: 'Appendix' },
       { text: 'Appendix' },
@@ -192,7 +190,9 @@ and then moves on.` },
   it('extracts sidebars', () => {
     const document = adoc(`.AsciiDoc history
 ****
-AsciiDoc was first released in Nov 2002`);
+AsciiDoc was first released in Nov 2002
+****
+`);
     expect(extract(document, options)).toEqual([
       { text: 'AsciiDoc history' },
       { text: 'AsciiDoc was first released in Nov 2002' },
