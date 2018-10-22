@@ -14,8 +14,8 @@ import ImageAttributes = AsciiDoctorJs.ImageAttributes;
 import ListItem = AsciiDoctorJs.ListItem;
 import Table = AsciiDoctorJs.Table;
 import { isArrayOfBlocks } from './common';
-import { preprocessor } from './conditionals';
-import { includeProcessor } from './includes';
+import { extractPreprocessor } from './conditionals';
+import { noopIncludeProcessor } from './includes';
 import Options = AsciiDoctorJs.Options;
 import AsciiDoctorFactory from 'asciidoctor.js';
 
@@ -69,8 +69,8 @@ const extractVerbatimBlock = extend(extractAbstractBlock, (block) => {
 function load(input: string, isPath: boolean, options: Options): AbstractBlock {
   const asciidoctor = AsciiDoctorFactory();
   asciidoctor.Extensions.register('extract', function() {
-    this.preprocessor(preprocessor);
-    this.includeProcessor(includeProcessor);
+    this.preprocessor(extractPreprocessor);
+    this.includeProcessor(noopIncludeProcessor);
   });
   const document = isPath ? asciidoctor.loadFile(input, options) : asciidoctor.load(input, options);
   asciidoctor.Extensions.unregister(['extract']);
