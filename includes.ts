@@ -6,7 +6,7 @@ import IncludeProcessor = AsciiDoctorJs.IncludeProcessor;
 // is created for each .adoc. That way, if an .adoc is included in multiple
 // places, the strings from the included .adoc only need to be translated once.
 
-export function includeProcessor(this: IncludeProcessor) {
+export function noopIncludeProcessor(this: IncludeProcessor) {
   this.process((document, reader, target, attributes) => {
     // tslint:disable-next-line:no-empty
   });

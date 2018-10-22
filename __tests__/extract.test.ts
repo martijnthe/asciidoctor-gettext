@@ -73,15 +73,15 @@ image::logo.svg[]
   it('extracts table cells', () => {
     const input =
       `:my_var: Footer B\n\n.Table Title\n[cols=2*,options='header,footer']\n|===\n|Column A |Column B \n\
-|Yes |No\n|Perhaps |Maybe \n|Footer A |{my_var}\n|===\n`;
+|Yes |No\n|Perhaps |Escape the \\| pipe \n|Footer A |{my_var}\n|===\n`;
     expect(extract(input, options)).toEqual([
       { text: 'Footer B' },
       { text: 'Table Title' },
       { text: 'Column A' }, { text: 'Column B' },
       { text: 'Yes' }, { text: 'No' },
-      { text: 'Perhaps' }, { text: 'Maybe' },
+      { text: 'Perhaps' }, { text: 'Escape the | pipe' },
       { text: 'Footer A' },
-      // Don't substitute variables:
+      // Don't extractSubstitute variables:
       { text: '{my_var}' },
     ]);
   });

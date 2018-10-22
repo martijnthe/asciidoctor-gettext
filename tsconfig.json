@@ -4,7 +4,9 @@
     "module": "commonjs",
     "declaration": true,
     "lib": [
-      "es5"
+      "es5",
+      "es2015.core",
+      "es2016.array.include"
     ],
     "sourceMap": true,
     "outDir": "dist",
