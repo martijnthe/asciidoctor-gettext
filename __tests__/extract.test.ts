@@ -36,14 +36,9 @@ describe('extract', () => {
   });
 
   it('extracts preamble', () => {
-    const input = '= Title\nPreamble Header\n\nPreamble Body.\n\n== Section Title';
+    const input = '= Title\nAu Thor\n\nPreamble Body.\n\n== Section Title';
     expect(extract(input, options)).toEqual([
       { text: 'Title' },
-      { text: 'Preamble' },
-      { text: 'PH' },
-      { text: 'Header' },
-      { text: 'Preamble Header' },
-      { text: 'Preamble Header' },
       { text: 'Preamble Body.' },
       { text: 'Section Title' },
     ]);
