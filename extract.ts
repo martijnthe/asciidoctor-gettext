@@ -13,6 +13,11 @@ import Image = AsciiDoctorJs.Image;
 import ImageAttributes = AsciiDoctorJs.ImageAttributes;
 import ListItem = AsciiDoctorJs.ListItem;
 import Table = AsciiDoctorJs.Table;
+import { isArrayOfBlocks } from './common';
+import { preprocessor } from './conditionals';
+import { includeProcessor } from './includes';
+import Options = AsciiDoctorJs.Options;
+import AsciiDoctorFactory from 'asciidoctor.js';
 
 export interface Extraction {
   text: string;
@@ -61,7 +66,30 @@ const extractVerbatimBlock = extend(extractAbstractBlock, (block) => {
   }];
 });
 
-export function extract(block: AbstractBlock, options: ExtractOptions= {}): Extraction[] {
+function load(input: string, isPath: boolean, options: Options): AbstractBlock {
+  const asciidoctor = AsciiDoctorFactory();
+  asciidoctor.Extensions.register('extract', function() {
+    this.preprocessor(preprocessor);
+    this.includeProcessor(includeProcessor);
+  });
+  const document = isPath ? asciidoctor.loadFile(input, options) : asciidoctor.load(input, options);
+  asciidoctor.Extensions.unregister(['extract']);
+  return document;
+}
+
+export function extract(input: string, extractOptions: ExtractOptions= {},
+                        asciidocOptions: Options = {}): Extraction[] {
+  const document = load(input, false, asciidocOptions);
+  return extractBlock(document, extractOptions);
+}
+
+export function extractFile(path: string, extractOptions: ExtractOptions= {},
+                            asciidocOptions: Options = {}): Extraction[] {
+  const document = load(path, true, asciidocOptions);
+  return extractBlock(document, extractOptions);
+}
+
+export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}): Extraction[] {
   const ignore = (block: AbstractBlock) => [];
 
   const extractMap: ExtractMap = {
@@ -142,21 +170,17 @@ export function extract(block: AbstractBlock, options: ExtractOptions= {}): Extr
   };
 
   const extraction = (() => {
-    const extract = extractMap[block.node_name];
-    if (!extract) {
+    const extractFn = extractMap[block.node_name];
+    if (!extractFn) {
       console.error(`Unknown node name: '${block.node_name}'`);
       return [];
     }
-    return extract(block);
+    return extractFn(block);
   })();
 
   const childExtractions = extractBlocks(block.getBlocks(), options = {});
 
   return extraction.concat(childExtractions);
-}
-
-function isArrayOfBlocks(value: any): value is AbstractBlock[] {
-  return Array.isArray(value);
 }
 
 export function extractBlocks(blocks: Array<AbstractBlock | AbstractBlock[]>,
@@ -166,6 +190,6 @@ export function extractBlocks(blocks: Array<AbstractBlock | AbstractBlock[]>,
     if (isArrayOfBlocks(block)) {
       return extractions.concat(extractBlocks(block, options));
     }
-    return extractions.concat(extract(block, options));
+    return extractions.concat(extractBlock(block, options));
   }, []);
 }

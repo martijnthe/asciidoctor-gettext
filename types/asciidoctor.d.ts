@@ -103,6 +103,8 @@ declare namespace AsciiDoctorJs {
     Extensions: {
       create(): Registry;
       register(callback: (this: Registry) => void): void;
+      register(name: string, callback: (this: Registry) => void): void;
+      unregister(names: string[]): void;
     }
   };
 }
