@@ -1,7 +1,6 @@
 import WriteStream = NodeJS.WriteStream;
-import { asciidoctor } from './singleton';
 import { Command } from 'commander';
-import { allBuiltinsAttributeFilter, extract } from './extract';
+import { allBuiltinsAttributeFilter, extractFile } from './extract';
 import { po } from 'gettext-parser';
 import { translationObjectFromExtractions } from './adapter';
 import { writeFileSync } from 'fs';
@@ -47,11 +46,10 @@ export function gettextizeAction(program: Command) {
     return;
   }
 
-  const document = asciidoctor.loadFile(program.master, {
-    attributes: getAttributes(program),
-  });
-  const extractions = extract(document, {
+  const extractions = extractFile(program.master, {
     attributeFilter: program.builtinAttrs ? undefined : allBuiltinsAttributeFilter,
+  }, {
+    attributes: getAttributes(program),
   });
   const blacklistRegexes = getBlacklistRegexes(program);
   const translationObject = translationObjectFromExtractions(extractions, {

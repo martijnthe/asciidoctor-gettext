@@ -1,4 +1,3 @@
-import { asciidoctor } from '../singleton';
 import { allBuiltinsAttributeFilter, extract } from '../extract';
 
 describe('extract', () => {
@@ -6,43 +5,39 @@ describe('extract', () => {
     attributeFilter: allBuiltinsAttributeFilter,
   };
 
-  function adoc(text: string) {
-    return asciidoctor.load(text, {});
-  }
-
   it('extracts document title', () => {
-    const document = adoc('= The Title\n');
-    expect(extract(document, options)).toEqual([
+    const input = '= The Title\n';
+    expect(extract(input, options)).toEqual([
       { text: 'The Title' },
     ]);
   });
 
   it('extracts section headers', () => {
-    const document = adoc('== Section Level 1\n\n=== Section Level 2\n\n');
-    expect(extract(document, options)).toEqual([
+    const input = '== Section Level 1\n\n=== Section Level 2\n\n';
+    expect(extract(input, options)).toEqual([
       { text: 'Section Level 1' },
       { text: 'Section Level 2' },
     ]);
   });
 
   it('extracts paragraphs', () => {
-    const document = adoc('A paragraph.\n__Still__ the *same* paragraph.\n\nAnd a `new` one.\n');
-    expect(extract(document, options)).toEqual([
+    const input = 'A paragraph.\n__Still__ the *same* paragraph.\n\nAnd a `new` one.\n';
+    expect(extract(input, options)).toEqual([
       { text: 'A paragraph.\n__Still__ the *same* paragraph.' },
       { text: 'And a `new` one.' },
     ]);
   });
 
   it('does not escape to HTML entities', () => {
-    const document = adoc('== Tom & Jerry <>\n');
-    expect(extract(document, options)).toEqual([
+    const input = '== Tom & Jerry <>\n';
+    expect(extract(input, options)).toEqual([
       { text: 'Tom & Jerry <>' },
     ]);
   });
 
   it('extracts preamble', () => {
-    const document = adoc('= Title\nPreamble Header\n\nPreamble Body.\n\n== Section Title');
-    expect(extract(document, options)).toEqual([
+    const input = '= Title\nPreamble Header\n\nPreamble Body.\n\n== Section Title';
+    expect(extract(input, options)).toEqual([
       { text: 'Title' },
       { text: 'Preamble' },
       { text: 'PH' },
@@ -55,32 +50,32 @@ describe('extract', () => {
   });
 
   it('extracts inline images', () => {
-    const document = adoc('image:logo.svg[]\n');
-    expect(extract(document, options)).toEqual([
+    const input = 'image:logo.svg[]\n';
+    expect(extract(input, options)).toEqual([
       { text: 'image:logo.svg[]' },
     ]);
   });
 
   it('extracts block image macros', () => {
-    const document = adoc('image::logo.svg[]\n');
-    expect(extract(document, options)).toEqual([
+    const input = 'image::logo.svg[]\n';
+    expect(extract(input, options)).toEqual([
       { text: 'logo.svg' },
     ]);
   });
 
   it('extracts block image macros with alt text', () => {
-    const document = adoc('image::logo.svg[Our fancy logo]\n');
-    expect(extract(document, options)).toEqual([
+    const input = 'image::logo.svg[Our fancy logo]\n';
+    expect(extract(input, options)).toEqual([
       { text: 'logo.svg' },
       { text: 'Our fancy logo' },
     ]);
   });
 
   it('extracts table cells', () => {
-    const document = adoc(
+    const input =
       `:my_var: Footer B\n\n.Table Title\n[cols=2*,options='header,footer']\n|===\n|Column A |Column B \n\
-|Yes |No\n|Perhaps |Maybe \n|Footer A |{my_var}\n|===\n`);
-    expect(extract(document, options)).toEqual([
+|Yes |No\n|Perhaps |Maybe \n|Footer A |{my_var}\n|===\n`;
+    expect(extract(input, options)).toEqual([
       { text: 'Footer B' },
       { text: 'Table Title' },
       { text: 'Column A' }, { text: 'Column B' },
@@ -93,15 +88,15 @@ describe('extract', () => {
   });
 
   it('extracts lists', () => {
-    const document = adoc(`
+    const input = `
 .List Title
 item one::
 * subitem one one
 * subitem one two
 item two::
 * subitem two
-`);
-    expect(extract(document, options)).toEqual([
+`;
+    expect(extract(input, options)).toEqual([
       { text: 'List Title' },
       { text: 'item one' },
       { text: 'subitem one one' },
@@ -112,15 +107,15 @@ item two::
   });
 
   it('extracts literals', () => {
-    const document = adoc('....\ntake this literally\n....');
-    expect(extract(document, options)).toEqual([{
+    const input = '....\ntake this literally\n....';
+    expect(extract(input, options)).toEqual([{
       text: 'take this literally',
     }]);
   });
 
   it('extracts builtin, localizable attributes', () => {
-    const document = adoc('');
-    expect(extract(document)).toEqual([
+    const input = '';
+    expect(extract(input)).toEqual([
       { text: 'Caution' },
       { text: 'Important' },
       { text: 'Note' },
@@ -143,30 +138,30 @@ item two::
 
   it('extracts custom attributes, but leaves references intact', () => {
     // my_var spans multiple lines:
-    const document = adoc(':my_var: something\\nto translate\n\nThis is {my_var}\n');
-    expect(extract(document, options)).toEqual([
+    const input = ':my_var: something\\nto translate\n\nThis is {my_var}\n';
+    expect(extract(input, options)).toEqual([
       { text: 'something\\nto translate' },
       { text: 'This is {my_var}' },
     ]);
   });
 
   it('extracts quote blocks', () => {
-    const document = adoc(`
+    const input = `
 .Gettysburg Address
 [#gettysburg]
 [quote, Abraham Lincoln, Address delivered at the dedication of the Cemetery at Gettysburg]
 ____
 Four score and seven years ago our fathers brought forth
 on this continent a new nation...
-____`);
-    expect(extract(document, options)).toEqual([
+____`;
+    expect(extract(input, options)).toEqual([
       { text: 'Gettysburg Address' },
       { text: 'Four score and seven years ago our fathers brought forth\non this continent a new nation...' },
     ]);
   });
 
   it('extracts verse blocks', () => {
-    const document = adoc(`[verse, Carl Sandburg, Fog]
+    const input = `[verse, Carl Sandburg, Fog]
 ____
 The fog comes
 on little cat feet.
@@ -175,8 +170,8 @@ It sits looking
 over harbor and city
 on silent haunches
 and then moves on.
-____`);
-    expect(extract(document, options)).toEqual([
+____`;
+    expect(extract(input, options)).toEqual([
       { text: `The fog comes
 on little cat feet.
 
@@ -188,19 +183,19 @@ and then moves on.` },
   });
 
   it('extracts sidebars', () => {
-    const document = adoc(`.AsciiDoc history
+    const input = `.AsciiDoc history
 ****
 AsciiDoc was first released in Nov 2002
 ****
-`);
-    expect(extract(document, options)).toEqual([
+`;
+    expect(extract(input, options)).toEqual([
       { text: 'AsciiDoc history' },
       { text: 'AsciiDoc was first released in Nov 2002' },
     ]);
   });
 
   it('extracts admonition block with example', () => {
-    const document = adoc(`[IMPORTANT]
+    const input = `[IMPORTANT]
 .Feeding the Werewolves
 ====
 While werewolves are hardy community members, keep in mind the following dietary concerns:
@@ -208,8 +203,8 @@ While werewolves are hardy community members, keep in mind the following dietary
 . They are allergic to cinnamon.
 . More than two glasses of orange juice in 24 hours makes them howl in harmony with alarms and sirens.
 . Celery makes them sad.
-====`);
-    expect(extract(document, options)).toEqual([
+====`;
+    expect(extract(input, options)).toEqual([
       { 'text': 'Feeding the Werewolves' },
       { 'text': 'While werewolves are hardy community members, keep in mind the following dietary concerns:' },
       { 'text': 'They are allergic to cinnamon.' },
@@ -220,41 +215,41 @@ While werewolves are hardy community members, keep in mind the following dietary
   });
 
   it('extracts "air quotes"', () => {
-    const document = adoc(`[, Richard M. Nixon]
+    const input = `[, Richard M. Nixon]
 ""
 When the President does it, that means that it's not illegal.
-""`);
-    expect(extract(document, options)).toEqual([
+""`;
+    expect(extract(input, options)).toEqual([
       { text: 'When the President does it, that means that it\'s not illegal.' },
     ]);
   });
 
   it('extracts listing', () => {
-    const document = adoc('[listing]\nThis is an example of a paragraph styled with listing.');
-    expect(extract(document, options)).toEqual([
+    const input = '[listing]\nThis is an example of a paragraph styled with listing.';
+    expect(extract(input, options)).toEqual([
       { text: 'This is an example of a paragraph styled with listing.' },
     ]);
   });
 
   it('extracts source', () => {
-    const document = adoc(`[source,js]
+    const input = `[source,js]
 ----
 console.log('hello, world');
-----`);
-    expect(extract(document, options)).toEqual([
+----`;
+    expect(extract(input, options)).toEqual([
       { text: 'console.log(\'hello, world\');' },
     ]);
   });
 
   it('extracts passthroughs', () => {
-    const document = adoc('The text pass:[<u>underline me</u>] is underlined.');
-    expect(extract(document, options)).toEqual([
+    const input = 'The text pass:[<u>underline me</u>] is underlined.';
+    expect(extract(input, options)).toEqual([
       { text: 'The text pass:[<u>underline me</u>] is underlined.' },
     ]);
   });
 
   it('extracts everything within conditionals', () => {
-    const document = adoc(`ifeval::[1<=0]
+    const input = `ifeval::[1<=0]
 Unreachable
 endif::[]
 
@@ -269,8 +264,8 @@ endif::[]
 ifdef::revnumber[This document has a version number of {revnumber}.]
 
 ifdef::revnumber[Asciidoc looks for the last ] in the string]
-`);
-    expect(extract(document, options)).toEqual([
+`;
+    expect(extract(input, options)).toEqual([
       {
         text: 'Unreachable',
       },
@@ -290,27 +285,27 @@ ifdef::revnumber[Asciidoc looks for the last ] in the string]
   });
 
   it('ignores comments', () => {
-    const document = adoc('// a single line comment\n////\n a multi\nline comment\n////');
-    expect(extract(document, options)).toEqual([]);
+    const input = '// a single line comment\n////\n a multi\nline comment\n////';
+    expect(extract(input, options)).toEqual([]);
   });
 
   it('ignores page breaks', () => {
-    const document = adoc('<<<\n');
-    expect(extract(document, options)).toEqual([]);
+    const input = '<<<\n';
+    expect(extract(input, options)).toEqual([]);
   });
 
   it('ignores horizontal rules', () => {
-    const document = adoc('---\n');
-    expect(extract(document, options)).toEqual([]);
+    const input = '---\n';
+    expect(extract(input, options)).toEqual([]);
   });
 
   it('ignores toc::[]', () => {
-    const document = adoc(':toc: macro\n\ntoc::[]\n');
-    expect(extract(document, options)).toEqual([]);
+    const input = ':toc: macro\n\ntoc::[]\n';
+    expect(extract(input, options)).toEqual([]);
   });
 
   it('ignores include::...[]', () => {
-    const document = adoc('include::bar.adoc[]\n');
-    expect(extract(document, options)).toEqual([]);
+    const input = 'include::bar.adoc[]\n';
+    expect(extract(input, options)).toEqual([]);
   });
 });
