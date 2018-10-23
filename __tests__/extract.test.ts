@@ -52,8 +52,12 @@ describe('extract', () => {
   });
 
   it('extracts block image macros', () => {
-    const input = 'image::logo.svg[]\n';
+    const input = `
+.Image Title
+image::logo.svg[]
+`;
     expect(extract(input, options)).toEqual([
+      { text: 'Image Title' },
       { text: 'logo.svg' },
     ]);
   });
