@@ -106,7 +106,7 @@ export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}):
       });
       return extractions;
     },
-    image: (block) => {
+    image: extend(extractAbstractBlock, (block) => {
       const image = block as Image;
       const attributes = image.getAttributes();
       // Add the target file name to the localizable strings. This is useful
@@ -125,7 +125,7 @@ export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}):
         }
       });
       return extractions;
-    },
+    }),
     list_item: (block) => {
       const li = block as ListItem;
       const text = li.text;
