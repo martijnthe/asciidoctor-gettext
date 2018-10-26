@@ -51,7 +51,7 @@
     "coveralls:upload": "nyc report --reporter=lcov && cat ./coverage/lcov.info | coveralls",
     "lint": "tslint -p .",
     "prepare": "tsc",
-    "test": "jest --collectCoverage"
+    "test": "rm -rf .nyc_output/*.json && jest --collectCoverage"
   },
   "jest": {
     "coverageReporters": ["json"],

@@ -8,7 +8,7 @@ function run(args: string[]= []) {
   const ret = spawnSync(
     // Run with nyc to get coverage reporting:
     require.resolve('.bin/nyc'),
-    [binPath, ...args],
+    ['--clean=false', binPath, ...args],
     {
       encoding: 'utf8',
     });
