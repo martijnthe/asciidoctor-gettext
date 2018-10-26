@@ -2,4 +2,5 @@
 dist
 node_modules
 coverage
+.nyc_output
 yarn-error.log
