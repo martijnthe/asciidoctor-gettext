@@ -4,9 +4,11 @@ import * as tmp from 'tmp';
 import { readFileSync } from 'fs';
 
 function run(args: string[]= []) {
+  const binPath = path.join(__dirname, '..', 'bin', 'asciidoctor-gettext.js');
   const ret = spawnSync(
-    path.join(__dirname, '..', 'bin', 'asciidoctor-gettext.js'),
-    args,
+    // Run with nyc to get coverage reporting:
+    require.resolve('.bin/nyc'),
+    [binPath, ...args],
     {
       encoding: 'utf8',
     });
