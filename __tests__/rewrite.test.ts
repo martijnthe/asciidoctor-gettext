@@ -39,10 +39,13 @@ describe('rewrite', () => {
 == Section Level 1
 
 === Section Level 2
+
+A paragraph.
 `;
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('Section Level 1');
     expect(filter).toHaveBeenCalledWith('Section Level 2');
+    expect(filter).toHaveBeenCalledWith('A paragraph.');
   });
 
   it('rewrites paragraphs', () => {
@@ -52,6 +55,7 @@ A paragraph.
 __Still__ the *same* paragraph.
 
 [[my-paragraph-id]]
+[role="xyz"]
 And a \`new\` one.`;
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('A paragraph.\n__Still__ the *same* paragraph.');
@@ -377,9 +381,12 @@ A new paragraph.`;
 [[some-id]]
 .Title of included block text.
 include::other.adoc[]
-Text appended to included block text.`;
+
+Text created as new block. Appending to included block is not supported.`;
     const filter = doRewrite(input);
-    expect(filter).toHaveBeenCalledWith('Text appended to included block text.');
+    expect(filter).toHaveBeenCalledWith('Title of included block text.');
+    expect(filter).toHaveBeenCalledWith(
+      'Text created as new block. Appending to included block is not supported.');
   });
 });
 
