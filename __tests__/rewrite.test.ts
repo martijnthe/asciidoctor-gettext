@@ -36,6 +36,7 @@ describe('rewrite', () => {
   it('rewrites section headers', () => {
     const input = `
 [[section-level-1]]
+[role="title-role"]
 == Section Level 1
 
 === Section Level 2
