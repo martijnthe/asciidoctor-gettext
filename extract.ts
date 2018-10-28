@@ -15,7 +15,6 @@ import ListItem = AsciiDoctorJs.ListItem;
 import Table = AsciiDoctorJs.Table;
 import { isArrayOfBlocks } from './common';
 import { extractPreprocessor } from './conditionals';
-import { noopIncludeProcessor } from './includes';
 import Options = AsciiDoctorJs.Options;
 import AsciiDoctorFactory from 'asciidoctor.js';
 
@@ -70,7 +69,6 @@ function load(input: string, isPath: boolean, options: Options): AbstractBlock {
   const asciidoctor = AsciiDoctorFactory();
   asciidoctor.Extensions.register('extract', function() {
     this.preprocessor(extractPreprocessor);
-    this.includeProcessor(noopIncludeProcessor);
   });
   const document = isPath ? asciidoctor.loadFile(input, options) : asciidoctor.load(input, options);
   asciidoctor.Extensions.unregister(['extract']);
@@ -101,7 +99,7 @@ export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}):
       const attributeFilter = options.attributeFilter || defaultAttributeFilter;
       const extractions = Object.keys(attributes).filter(attributeFilter).map(key => {
         return {
-          text: attributes[key],
+          text: attributes[key] as string,
         };
       });
       return extractions;

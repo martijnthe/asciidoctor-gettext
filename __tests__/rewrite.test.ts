@@ -1,6 +1,5 @@
 import { escapePipes, quoteAttributeValueIfNeeded, rewrite } from '../rewrite';
 import AsciiDoctorFactory from 'asciidoctor.js';
-import glob from 'glob';
 import * as fs from 'fs';
 import Options = AsciiDoctorJs.Options;
 
@@ -107,11 +106,22 @@ Some text
   it('rewrites custom attributes, but leaves references intact', () => {
     // my_var spans multiple lines:
     const input = `
+= Document title
+
 :my_var: something\\nto translate
 
 This is {my_var}
+
+:my_var: assigning it again
+:another_var: ho ho ho
+:another_var: ha ha ha
+
+Using the reassigned attribute {my_var} {another_var}
+
+Another paragraph {my_var} {another_var}
 `;
     const filter = doRewrite(input);
+    expect(filter).toHaveBeenCalledWith('Document title');
     expect(filter).toHaveBeenCalledWith('something\\nto translate');
     expect(filter).toHaveBeenCalledWith('This is {my_var}');
   });
@@ -138,6 +148,13 @@ caption="Table A. "]
 line cell
 | Another multi
 line cell
+|===
+
+// This table fails to be rewritten when not synthesizing the "cols" attribute:
+.Second table
+|===
+2+| 2+| cm 2+| inch
+|62 |0-3M |30 | 53 | 11,8 |20,9
 |===
 `;
     const filter = doRewrite(input);
@@ -205,6 +222,12 @@ Cloud Providers::
 
   it('rewrites literals', () => {
     const input = '....\ntake this literally\n....';
+    const filter = doRewrite(input);
+    expect(filter).toHaveBeenCalledWith('take this literally');
+  });
+
+  it('rewrites pass-throughs', () => {
+    const input = '++++\ntake this literally\n++++';
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('take this literally');
   });

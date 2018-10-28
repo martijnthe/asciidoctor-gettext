@@ -72,11 +72,20 @@ declare namespace AsciiDoctorJs {
     }
   }
 
-  export interface Attributes {
-    [key: string]: string;
+  export interface AttributeEntry {
+    name: string;
+    value: string;
+    negate: boolean;
+  }
+
+  export type Attributes = {
+    [key: string]: string | undefined;
   }
 
   export interface OpalHash {
+    $$smap: {
+      [key: string]: string | boolean;
+    }
     $$keys: string[];
   }
 
