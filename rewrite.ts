@@ -133,7 +133,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     floating_title: {
       open: () => {
         const section = block as Section;
-        // const prefix = '='.repeat(section.level + 1);
         write(`[float]\n${transformer(section.title)}\n----------\n`);
       },
     },
@@ -208,6 +207,9 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     section: {
       open: () => {
         const section = block as Section;
+        const attributes = section.getAttributes();
+        const attributesString = getAttributesString(section, transformer);
+        write(`[${attributesString}]\n`);
         const prefix = '='.repeat(section.level + 1);
         write(`${prefix} ${transformer(section.title)}\n`);
       },
