@@ -1,22 +1,24 @@
 import { escapePipes, quoteAttributeValueIfNeeded, rewrite } from '../rewrite';
 import AsciiDoctorFactory from 'asciidoctor.js';
-import { extract } from '../extract';
+import glob from 'glob';
+import * as fs from 'fs';
+import Options = AsciiDoctorJs.Options;
 
 describe('rewrite', () => {
 
-  function convert(input: string): string {
+  function convert(input: string, asciidocOptions: Options = {}): string {
     const asciidoctor = AsciiDoctorFactory();
-    return asciidoctor.convert(input, {});
+    return asciidoctor.convert(input, asciidocOptions);
   }
 
-  function doRewrite(input: string) {
+  function doRewrite(input: string, asciidocOptions: Options = {}) {
     const filter = jest.fn(input => input);
-    const output = rewrite(input, filter);
+    const output = rewrite(input, filter, asciidocOptions);
     // The output does not have to match the input. For example, superfluous newlines are removed,
     // but this doesn't affect the document's structure.
     // The Litmus test of making sure rewrite() is properly rewriting the document:
     // Run asciidoctor.convert() on both input and output and make sure they are equal.
-    expect(convert(output)).toEqual(convert(input));
+    expect(convert(output, asciidocOptions)).toEqual(convert(input, asciidocOptions));
     return filter;
   }
 
@@ -32,7 +34,12 @@ describe('rewrite', () => {
   });
 
   it('rewrites section headers', () => {
-    const input = '== Section Level 1\n\n=== Section Level 2\n\n';
+    const input = `
+[[section-level-1]]
+== Section Level 1
+
+=== Section Level 2
+`;
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('Section Level 1');
     expect(filter).toHaveBeenCalledWith('Section Level 2');
@@ -44,6 +51,7 @@ describe('rewrite', () => {
 A paragraph.
 __Still__ the *same* paragraph.
 
+[[my-paragraph-id]]
 And a \`new\` one.`;
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('A paragraph.\n__Still__ the *same* paragraph.');
@@ -82,11 +90,13 @@ Preamble Body.
 .A mountain sunset
 [link=https://www.flickr.com/photos/javh/5448336655]
 image::sunset.jpg[Sunset,300,200,role=abc,float=right,align=center]
+Some text
 `;
     const filter = doRewrite(input);
     expect(filter).toHaveBeenCalledWith('A mountain sunset');
     expect(filter).toHaveBeenCalledWith('sunset.jpg');
     expect(filter).toHaveBeenCalledWith('Sunset');
+    expect(filter).toHaveBeenCalledWith('Some text');
   });
 
   it('rewrites custom attributes, but leaves references intact', () => {
@@ -105,6 +115,7 @@ This is {my_var}
     const input = `
 :my_var: Footer B
 
+[[my-table-id]]
 .Table Title
 [.rolename,cols=2*^,options='header,footer',frame=topbot,grid=rows,stripes=none,%rotate,\
 caption="Table A. "]
@@ -141,6 +152,7 @@ line cell
 
   it('rewrites lists', () => {
     const input = `
+[[my-list-id]]
 .List Title
 Operating Systems::
   Linux:::
@@ -346,6 +358,28 @@ ifdef::revnumber[Asciidoc looks for the last ] in the string]
     const input = 'include::bar.adoc[]\n';
     const filter = doRewrite(input);
     expect(filter).not.toHaveBeenCalled();
+  });
+
+  it('rewrites floating title', () => {
+    const input = `
+[[my-float-title-id]]
+[float]
+{doctitle}
+----------
+A new paragraph.`;
+    const filter = doRewrite(input);
+    expect(filter).toHaveBeenCalledWith('{doctitle}');
+    expect(filter).toHaveBeenCalledWith('A new paragraph.');
+  });
+
+  it('rewrites title and id assigned to an included block', () => {
+    const input = `
+[[some-id]]
+.Title of included block text.
+include::other.adoc[]
+Text appended to included block text.`;
+    const filter = doRewrite(input);
+    expect(filter).toHaveBeenCalledWith('Text appended to included block text.');
   });
 });
 

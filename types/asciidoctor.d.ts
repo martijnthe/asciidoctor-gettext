@@ -34,6 +34,7 @@ declare namespace AsciiDoctorJs {
   export interface AbstractNode {
     // Using node_name, getNodeName() doesn't seem to exist...?
     node_name: string;
+    id: string;
   }
 
   export interface AbstractBlock extends AbstractNode {
@@ -44,6 +45,7 @@ declare namespace AsciiDoctorJs {
   }
 
   export interface Block extends AbstractBlock {
+    getRole(): string;
     getSource(): string;
     getStyle(): string;
   }
@@ -117,8 +119,7 @@ declare namespace AsciiDoctorJs {
   export interface Options {
     extension_registry?: Registry,
     attributes?: {
-      docdate?: string | boolean;
-      doctime?: string | boolean;
+      [key: string]: string | boolean;
     }
   }
 

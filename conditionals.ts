@@ -1,24 +1,28 @@
 import Document = AsciiDoctorJs.Document;
 import Preprocessor = AsciiDoctorJs.Preprocessor;
 import PreproccesorReader = AsciiDoctorJs.Reader;
-import AbstractBlock = AsciiDoctorJs.AbstractBlock;
 import { RewriteTransformer, Write } from './rewrite';
 import Block = AsciiDoctorJs.Block;
-import BlockProcessor = AsciiDoctorJs.BlockProcessor;
 import IncludeProcessor = AsciiDoctorJs.IncludeProcessor;
 
 // NOTE: The extractPreprocessor attempts to strip out any ifeval, ifdef, ifndef and
 // endif directives using a bunch of regular expressions. This is not a proper
 // parser so there may be edge cases where this will fail.
 
-// NOTE: The rewritePreprocessor will rewrite all *if*::[] macros to be [if] blocks with
-// the parameters of the original if::[] encoded in a JSON string. This way, the if::[]s
-// get become nodes in the Document. Finally, getIfBlockRewriter() will rewrite the
-// [if] blocks back into (localized) if::[]s... It's a hacky abuse of the API, but
+// NOTE: The rewritePreprocessor will rewrite all *if*::[] macros to be paragraph blocks
+// with a "magic" role assigned to it. the parameters of the original if::[] encoded in
+// a JSON string, which is put into the paragraph text. This way, the if::[]s
+// get become nodes in the Document. Finally, ifBlockRewriterOpen() will rewrite the
+// paragraph blocks back into (localized) if::[]s... It's a hacky abuse of the API, but
 // unfortunately asciidoctor.js doesn't provide a real AST that reflects the input
 // completely (if::[]s are gone in the final tree).
 
-const ifBlockName = 'if';
+// NOTE: This hack is also used for include::[] macros. The reason is to enable "assigning"
+// id's and title's and attributes to a block that gets included through a macro. By
+// using a paragraph block to represent the include:[], asciidoctor's parser will assign the
+// id, title and attributes to the generated block.
+
+const ifBlockRole = '__asciiDoctorGettextIfBlockHack__';
 
 type IfDataType = 'ifeval' | 'ifdef' | 'ifndef' | 'endif' | 'include';
 
@@ -34,7 +38,7 @@ function getBlockLines(type: IfDataType, conditionOrContent: string = '', def: s
     conditionOrContent: conditionOrContent,
     def,
   };
-  return [`[${ifBlockName}]`, JSON.stringify(data), ''];
+  return [`[role="${ifBlockRole}"]`, JSON.stringify(data), ''];
 }
 
 const replacements = [
@@ -86,25 +90,15 @@ function makePreprocessor(type: 'extract' | 'rewrite') {
 export const extractPreprocessor = makePreprocessor('extract');
 export const rewritePreprocessor = makePreprocessor('rewrite');
 
-export function ifBlockProcessor(this: BlockProcessor) {
-  const self = this;
-  self.named(ifBlockName);
-  self.process((parent, reader) => {
-    const lines = reader.getLines();
-    return self.createBlock(parent, ifBlockName, lines);
-  });
-}
-
-export function getIfBlockRewriter(block: AbstractBlock, transformer: RewriteTransformer, write: Write) {
-  return {
-    open: () => {
-      const ifBlock = block as Block;
-      const data: IfData = JSON.parse(ifBlock.getSource()) as IfData;
-      const shouldLocalize = ['ifdef', 'ifndef'].includes(data.type);
-      const conditionOrContent = shouldLocalize ? transformer(data.conditionOrContent) : data.conditionOrContent;
-      write(`${data.type}::${data.def}[${conditionOrContent}]\n`);
-    },
-  };
+export function ifBlockRewriterOpen(ifBlock: Block, transformer: RewriteTransformer, write: Write) {
+  if (ifBlock.getRole() !== ifBlockRole) {
+    return false;
+  }
+  const data: IfData = JSON.parse(ifBlock.getSource()) as IfData;
+  const shouldLocalize = ['ifdef', 'ifndef'].includes(data.type);
+  const conditionOrContent = shouldLocalize ? transformer(data.conditionOrContent) : data.conditionOrContent;
+  write(`${data.type}::${data.def}[${conditionOrContent}]\n`);
+  return true;
 }
 
 export function rewriteIncludeProcessor(this: IncludeProcessor) {

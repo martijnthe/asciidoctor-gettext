@@ -9,8 +9,9 @@ import Image = AsciiDoctorJs.Image;
 import Table = AsciiDoctorJs.Table;
 import Attributes = AsciiDoctorJs.Attributes;
 import ListItem = AsciiDoctorJs.ListItem;
-import { getIfBlockRewriter, ifBlockProcessor, rewriteIncludeProcessor, rewritePreprocessor } from './conditionals';
+import { ifBlockRewriterOpen, rewriteIncludeProcessor, rewritePreprocessor } from './conditionals';
 import { nonLocalizableBuiltinAttributeKeys } from './attributes';
+import Options = AsciiDoctorJs.Options;
 
 export type RewriteTransformer = (extraction: string) => string;
 
@@ -18,7 +19,7 @@ export type Write = (text: string) => void;
 
 interface RewriteMap {
   [key: string]: {
-    open: () => void;
+    open?: () => void;
     close?: () => void;
   };
 }
@@ -30,7 +31,7 @@ interface ReWriteState {
   }[];
 }
 
-export function rewrite(text: string, transformer: RewriteTransformer): string {
+export function rewrite(text: string, transformer: RewriteTransformer, asciidocOptions: Options = {}): string {
   let outputText = '';
   function write(text: string) {
     outputText += text;
@@ -40,9 +41,8 @@ export function rewrite(text: string, transformer: RewriteTransformer): string {
   rewriteAsciidoctor.Extensions.register('rewrite', function() {
     this.preprocessor(rewritePreprocessor);
     this.includeProcessor(rewriteIncludeProcessor);
-    this.block(ifBlockProcessor);
   });
-  const document = rewriteAsciidoctor.load(text, {});
+  const document = rewriteAsciidoctor.load(text, asciidocOptions);
 
   const state: ReWriteState = {
     listStack: [],
@@ -51,14 +51,6 @@ export function rewrite(text: string, transformer: RewriteTransformer): string {
 
   rewriteAsciidoctor.Extensions.unregister(['rewrite']);
   return outputText;
-}
-
-function rewriteAbstractBlockTitle(block: AbstractBlock, transformer: RewriteTransformer, write: Write,
-                                   prefix: string = '.') {
-  const title = block.title;
-  if (!isNil(title)) {
-    write(`${prefix}${transformer(title)}\n`);
-  }
 }
 
 const attributeQuoteNeededRegex = / |,|"|'/;
@@ -101,15 +93,9 @@ export function escapePipes(input: string): string {
 }
 
 function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, write: Write, state: ReWriteState) {
-  const titleOnlyRewrite = {
-    open: () => {
-      rewriteAbstractBlockTitle(block, transformer, write);
-    },
-  };
   const listRewrite = {
     open: () => {
       updateListStack('push', block, state, write);
-      rewriteAbstractBlockTitle(block, transformer, write);
     },
     close: () => {
       updateListStack('pop', block, state, write);
@@ -119,7 +105,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     admonition: {
       open: () => {
         const admonitionBlock = block as Block;
-        rewriteAbstractBlockTitle(admonitionBlock, transformer, write);
         write(`[${admonitionBlock.getStyle()}]\n====\n`);
       },
       close: () => {
@@ -145,16 +130,21 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         }
       },
     },
-    if: getIfBlockRewriter(block as Block, transformer, write),
+    floating_title: {
+      open: () => {
+        const section = block as Section;
+        // const prefix = '='.repeat(section.level + 1);
+        write(`[float]\n${transformer(section.title)}\n----------\n`);
+      },
+    },
     image: {
       open: () => {
         const imageBlock = block as Image;
-        rewriteAbstractBlockTitle(imageBlock, transformer, write);
         const attributes = imageBlock.getAttributes();
         const localizableKeys = ['alt', 'default-alt', 'caption'];
         const excludingKeys = ['attribute_entries'];
         const attributesString = getAttributesString(imageBlock, transformer, localizableKeys, excludingKeys);
-        write(`image::${transformer(attributes.target)}[${attributesString}]`);
+        write(`image::${transformer(attributes.target)}[${attributesString}]\n`);
       },
     },
     list_item: {
@@ -195,7 +185,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
       open: () => {
         const literal = block as Block;
         const text = transformer(literal.getSource());
-        rewriteAbstractBlockTitle(literal, transformer, write);
         write(`....\n${text}\n....`);
       },
     },
@@ -207,7 +196,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     },
     quote: {
       open: () => {
-        rewriteAbstractBlockTitle(block, transformer, write);
         const localizableKeys = ['title', 'citetitle'];
         const excludingKeys = ['style', 'title'];
         const attributesString = getAttributesString(block, transformer, localizableKeys, excludingKeys);
@@ -227,7 +215,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     table: {
       open: () => {
         const table = block as Table;
-        rewriteAbstractBlockTitle(table, transformer, write);
         const localizableKeys = [''];
         const excludingKeys = ['rowcount', 'colcount', 'tablepcwidth'];
         const attributesString = getAttributesString(table, transformer, localizableKeys, excludingKeys, {
@@ -261,15 +248,16 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     },
     paragraph: {
       open: () => {
+        if (ifBlockRewriterOpen(block as Block, transformer, write)) {
+          return;
+        }
         const paragraphBlock = block as Block;
-        rewriteAbstractBlockTitle(paragraphBlock, transformer, write);
         write(`${transformer(paragraphBlock.getSource())}\n\n`);
       },
     },
-    preamble: titleOnlyRewrite,
+    preamble: {},
     sidebar: {
       open: () => {
-        rewriteAbstractBlockTitle(block, transformer, write);
         write('****\n');
       },
       close: () => {
@@ -280,7 +268,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     verse: {
       open: () => {
         const verse = block as Block;
-        rewriteAbstractBlockTitle(verse, transformer, write);
         const localizableKeys = ['title', 'citetitle'];
         const excludingKeys = ['style', 'title'];
         const attributesString = getAttributesString(block, transformer, localizableKeys, excludingKeys);
@@ -296,7 +283,16 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     return;
   }
 
-  rewrite.open();
+  if (!isNil(block.id)) {
+    write(`[[${block.id}]]\n`);
+  }
+  const title = block.title;
+  if (!isNil(title)) {
+    write(`.${transformer(title)}\n`);
+  }
+  if (rewrite.open) {
+    rewrite.open();
+  }
   rewriteBlocks(block.getBlocks(), transformer, write, state);
   if (rewrite.close) {
     rewrite.close();
