@@ -252,6 +252,8 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
           return;
         }
         const paragraphBlock = block as Block;
+        const attributesString = getAttributesString(paragraphBlock, transformer);
+        write(`[${attributesString}]\n`);
         write(`${transformer(paragraphBlock.getSource())}\n\n`);
       },
     },
@@ -286,9 +288,8 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
   if (!isNil(block.id)) {
     write(`[[${block.id}]]\n`);
   }
-  const title = block.title;
-  if (!isNil(title)) {
-    write(`.${transformer(title)}\n`);
+  if (block.node_name !== 'section' && !isNil(block.title)) {
+    write(`.${transformer(block.title)}\n`);
   }
   if (rewrite.open) {
     rewrite.open();
