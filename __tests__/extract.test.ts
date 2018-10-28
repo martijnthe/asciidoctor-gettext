@@ -20,6 +20,16 @@ describe('extract', () => {
     ]);
   });
 
+  it('extracts floating title', () => {
+    const input = `
+[float]
+== A floating title
+`;
+    expect(extract(input, options)).toEqual([
+      { text: 'A floating title' },
+    ]);
+  });
+
   it('extracts paragraphs', () => {
     const input = 'A paragraph.\n__Still__ the *same* paragraph.\n\nAnd a `new` one.\n';
     expect(extract(input, options)).toEqual([

@@ -106,6 +106,7 @@ export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}):
       });
       return extractions;
     },
+    floating_title: extractAbstractBlock,
     image: extend(extractAbstractBlock, (block) => {
       const image = block as Image;
       const attributes = image.getAttributes();
