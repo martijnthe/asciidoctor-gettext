@@ -9,17 +9,17 @@ import IncludeProcessor = AsciiDoctorJs.IncludeProcessor;
 // endif directives using a bunch of regular expressions. This is not a proper
 // parser so there may be edge cases where this will fail.
 
-// NOTE: The rewritePreprocessor will rewrite all *if*::[] macros to be paragraph blocks
+// NOTE: The rewritePreprocessor will rewrite all *if*::[] macros to be pass-through blocks
 // with a "magic" role assigned to it. the parameters of the original if::[] encoded in
-// a JSON string, which is put into the paragraph text. This way, the if::[]s
+// a JSON string, which is put into the pass-through text. This way, the if::[]s
 // get become nodes in the Document. Finally, ifBlockRewriterOpen() will rewrite the
-// paragraph blocks back into (localized) if::[]s... It's a hacky abuse of the API, but
+// pass-through blocks back into (localized) if::[]s... It's a hacky abuse of the API, but
 // unfortunately asciidoctor.js doesn't provide a real AST that reflects the input
 // completely (if::[]s are gone in the final tree).
 
 // NOTE: This hack is also used for include::[] macros. The reason is to enable "assigning"
 // id's and title's and attributes to a block that gets included through a macro. By
-// using a paragraph block to represent the include:[], asciidoctor's parser will assign the
+// using a pass-through block to represent the include:[], asciidoctor's parser will assign the
 // id, title and attributes to the generated block.
 
 const ifBlockRole = '__asciiDoctorGettextIfBlockHack__';
@@ -38,7 +38,7 @@ function getBlockLines(type: IfDataType, conditionOrContent: string = '', def: s
     conditionOrContent: conditionOrContent,
     def,
   };
-  return [`[role="${ifBlockRole}"]`, JSON.stringify(data), ''];
+  return [`[pass, role="${ifBlockRole}"]`, JSON.stringify(data), ''];
 }
 
 const replacements = [
@@ -58,6 +58,11 @@ const replacements = [
     regex: /^endif::/,
     extractSubstitute: (match: RegExpMatchArray) => null,
     rewriteSubstitute: (match: RegExpMatchArray) => getBlockLines('endif'),
+  },
+  {
+    regex: /^include::([^\[]+)\[\]$/,
+    extractSubstitute: (match: RegExpMatchArray) => null,
+    rewriteSubstitute: (match: RegExpMatchArray) => getBlockLines('include', '', match[1]),
   },
 ];
 
@@ -97,7 +102,7 @@ export function ifBlockRewriterOpen(ifBlock: Block, transformer: RewriteTransfor
   const data: IfData = JSON.parse(ifBlock.getSource()) as IfData;
   const shouldLocalize = ['ifdef', 'ifndef'].includes(data.type);
   const conditionOrContent = shouldLocalize ? transformer(data.conditionOrContent) : data.conditionOrContent;
-  write(`${data.type}::${data.def}[${conditionOrContent}]\n`);
+  write(`\n${data.type}::${data.def}[${conditionOrContent}]\n\n`);
   return true;
 }
 

@@ -12,6 +12,7 @@ import ListItem = AsciiDoctorJs.ListItem;
 import { ifBlockRewriterOpen, rewriteIncludeProcessor, rewritePreprocessor } from './conditionals';
 import { nonLocalizableBuiltinAttributeKeys } from './attributes';
 import Options = AsciiDoctorJs.Options;
+import AttributeEntry = AsciiDoctorJs.AttributeEntry;
 
 export type RewriteTransformer = (extraction: string) => string;
 
@@ -77,8 +78,11 @@ function getAttributesString(block: AbstractBlock, transformer: RewriteTransform
       if (excludingKeys.includes(attributeKey)) {
         continue;
       }
-      const isLocalizable = localizableKeys.includes(attributeKey);
       const origValue = attributes[attributeKey];
+      if (attributeKey === 'attribute_entries' || typeof origValue !== 'string') {
+        continue;
+      }
+      const isLocalizable = localizableKeys.includes(attributeKey);
       const value = quoteAttributeValueIfNeeded(isLocalizable ? transformer(origValue) : origValue);
       const separator = (attributesString !== '') ? ',' : '';
       attributesString += `${separator}${attributeKey}=${value}`;
@@ -90,6 +94,21 @@ function getAttributesString(block: AbstractBlock, transformer: RewriteTransform
 const pipeRegEx = /\|/g;
 export function escapePipes(input: string): string {
   return input.replace(pipeRegEx, '\\|');
+}
+
+function processCustomAttributes(block: AbstractBlock, transformer: RewriteTransformer,
+                                 write: Write, state: ReWriteState) {
+  const attributes = block.getAttributes();
+  const attributeEntries = attributes.attribute_entries as any;
+  if (attributeEntries === undefined) {
+    return;
+  }
+  for (const attributeEntry of attributeEntries as AttributeEntry[]) {
+    if (block.node_name === 'image' && attributeEntry.name === 'figure-number') {
+      continue;
+    }
+    write(`\n:${attributeEntry.name}: ${transformer(attributeEntry.value)}\n`);
+  }
 }
 
 function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, write: Write, state: ReWriteState) {
@@ -125,7 +144,11 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         }
         for (const key of document.attributes_modified.hash.$$keys) {
           const isNonLocalizable = nonLocalizableBuiltinAttributeKeys.includes(key);
-          const value = isNonLocalizable ? attributes[key] : transformer(attributes[key]);
+          const originalValue = attributes[key];
+          if (originalValue === undefined) {
+            continue;
+          }
+          const value = isNonLocalizable ? originalValue : transformer(originalValue);
           write(`:${key}: ${value}\n`);
         }
       },
@@ -141,8 +164,7 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         const imageBlock = block as Image;
         const attributes = imageBlock.getAttributes();
         const localizableKeys = ['alt', 'default-alt', 'caption'];
-        const excludingKeys = ['attribute_entries'];
-        const attributesString = getAttributesString(imageBlock, transformer, localizableKeys, excludingKeys);
+        const attributesString = getAttributesString(imageBlock, transformer, localizableKeys);
         write(`image::${transformer(attributes.target)}[${attributesString}]\n`);
       },
     },
@@ -193,6 +215,16 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         write('<<<\n');
       },
     },
+    pass: {
+      open: () => {
+        if (ifBlockRewriterOpen(block as Block, transformer, write)) {
+          return;
+        }
+        const literal = block as Block;
+        const text = transformer(literal.getSource());
+        write(`++++\n${text}\n++++`);
+      },
+    },
     quote: {
       open: () => {
         const localizableKeys = ['title', 'citetitle'];
@@ -219,10 +251,22 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         const table = block as Table;
         const localizableKeys = [''];
         const excludingKeys = ['rowcount', 'colcount', 'tablepcwidth'];
-        const attributesString = getAttributesString(table, transformer, localizableKeys, excludingKeys, {
-          caption: table.caption,
-        });
-        write(`[${attributesString}]\n|===\n`);
+        const extraAttributes: Attributes = {};
+        if (!isNil(table.caption)) {
+          extraAttributes.caption = table.caption;
+        }
+        const attrs = table.getAttributes();
+        if (attrs.cols === undefined) {
+          // Synthesize 'cols' attribute if it's missing. For some reason, if the table starts with
+          // colspans, the colcount is sometimes otherwise incorrectly calculated. Not sure why. Asciidoctor bug?
+          extraAttributes.cols = `${attrs.colcount}*`;
+        }
+        const attributesString = getAttributesString(table, transformer, localizableKeys, excludingKeys,
+          extraAttributes);
+        if (attributesString !== '') {
+          write(`[${attributesString}]\n`);
+        }
+        write('|===\n');
         const rowsKeys: (keyof Table['rows'])[] = ['head', 'body', 'foot'];
         for (const rowKey of rowsKeys) {
           for (const row of table.rows[rowKey]) {
@@ -250,9 +294,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     },
     paragraph: {
       open: () => {
-        if (ifBlockRewriterOpen(block as Block, transformer, write)) {
-          return;
-        }
         const paragraphBlock = block as Block;
         const attributesString = getAttributesString(paragraphBlock, transformer);
         write(`[${attributesString}]\n`);
@@ -286,6 +327,8 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
     console.error(`Unknown node name: '${block.node_name}'`);
     return;
   }
+
+  processCustomAttributes(block, transformer, write, state);
 
   if (!isNil(block.id)) {
     write(`[[${block.id}]]\n`);
