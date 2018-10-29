@@ -99,7 +99,7 @@ export function extractBlock(block: AbstractBlock, options: ExtractOptions= {}):
       const attributeFilter = options.attributeFilter || defaultAttributeFilter;
       const extractions = Object.keys(attributes).filter(attributeFilter).map(key => {
         return {
-          text: attributes[key] as string,
+          text: attributes[key],
         };
       });
       return extractions;
