@@ -79,7 +79,7 @@ declare namespace AsciiDoctorJs {
   }
 
   export type Attributes = {
-    [key: string]: string | undefined;
+    [key: string]: string;
   }
 
   export interface OpalHash {

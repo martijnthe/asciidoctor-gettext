@@ -176,6 +176,7 @@ line cell
     const input = `
 [[my-list-id]]
 .List Title
+[role=my_role]
 Operating Systems::
   Linux:::
     . Fedora

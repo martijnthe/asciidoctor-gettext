@@ -79,7 +79,7 @@ function getAttributesString(block: AbstractBlock, transformer: RewriteTransform
         continue;
       }
       const origValue = attributes[attributeKey];
-      if (attributeKey === 'attribute_entries' || typeof origValue !== 'string') {
+      if (attributeKey === 'attribute_entries') {
         continue;
       }
       const isLocalizable = localizableKeys.includes(attributeKey);
@@ -114,7 +114,15 @@ function processCustomAttributes(block: AbstractBlock, transformer: RewriteTrans
 function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, write: Write, state: ReWriteState) {
   const listRewrite = {
     open: () => {
-      updateListStack('push', block, state, write);
+      const listBlock = block as Block;
+      updateListStack('push', listBlock, state, write);
+      const attributesString = getAttributesString(
+        listBlock, transformer, [], ['id', 'style']);
+      if (attributesString !== '') {
+        const style = listBlock.getStyle();
+        const styleStr = isNil(style) ? '' : `${style}, `;
+        write(`[${styleStr}${attributesString}]\n`);
+      }
     },
     close: () => {
       updateListStack('pop', block, state, write);
@@ -145,7 +153,7 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
         for (const key of document.attributes_modified.hash.$$keys) {
           const isNonLocalizable = nonLocalizableBuiltinAttributeKeys.includes(key);
           const originalValue = attributes[key];
-          if (originalValue === undefined) {
+          if (originalValue as any === undefined) {
             continue;
           }
           const value = isNonLocalizable ? originalValue : transformer(originalValue);
@@ -256,7 +264,7 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
           extraAttributes.caption = table.caption;
         }
         const attrs = table.getAttributes();
-        if (attrs.cols === undefined) {
+        if (attrs.cols as any === undefined) {
           // Synthesize 'cols' attribute if it's missing. For some reason, if the table starts with
           // colspans, the colcount is sometimes otherwise incorrectly calculated. Not sure why. Asciidoctor bug?
           extraAttributes.cols = `${attrs.colcount}*`;
@@ -276,7 +284,6 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
               const text = escapePipes(transformer(cell.text));
               write(`${colspan}.${rowspan}+|${text}\n`);
             }
-            write('\n');
           }
         }
         write(`|===\n`);
