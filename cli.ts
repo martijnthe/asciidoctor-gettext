@@ -1,10 +1,11 @@
 import WriteStream = NodeJS.WriteStream;
 import { Command } from 'commander';
 import { allBuiltinsAttributeFilter, extractFile } from './extract';
-import { po } from 'gettext-parser';
+import { po, TranslationEntry } from 'gettext-parser';
 import { translationObjectFromExtractions } from './adapter';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 import Attributes = AsciiDoctorJs.Attributes;
+import { rewriteFile } from './rewrite';
 
 function getBlacklistRegexes(program: Command) {
   const blacklistRegexes = (program.ignore as string[]).map((pattern) => {
@@ -40,7 +41,15 @@ function getAttributes(program: Command): Attributes {
   }, {});
 }
 
-export function gettextizeAction(program: Command) {
+function write(contents: string | Buffer, outputPath?: string) {
+  if (outputPath) {
+    writeFileSync(outputPath, contents, { encoding: 'utf8' });
+  } else {
+    process.stdout.write(contents);
+  }
+}
+
+export function gettextizeAction(program: Command): void {
   if (!program.master) {
     program.help();
     return;
@@ -58,11 +67,32 @@ export function gettextizeAction(program: Command) {
     bugsEmailAddress: program.bugsEmailAddress,
   }, blacklistRegexes);
   const poBuffer = po.compile(translationObject);
-  if (program.po) {
-    writeFileSync(program.po, poBuffer, { encoding: 'utf8' });
-  } else {
-    process.stdout.write(poBuffer);
+  write(poBuffer, program.po);
+}
+
+export function translateAction(program: Command): void {
+  if (!program.master || !program.po) {
+    program.help();
+    return;
   }
+  const poBuffer = readFileSync(program.po);
+  const translationObject = po.parse(poBuffer);
+  const translations = translationObject.translations[''];
+  const transformer = (text: string): string => {
+    const translationEntry = translations[text];
+    if (!translationEntry) {
+      return text;
+    }
+    const msgstr = translationEntry.msgstr[0];
+    if (msgstr === '') {
+      return text;
+    }
+    return msgstr;
+  };
+  const output = rewriteFile(program.master, transformer, {
+    attributes: getAttributes(program),
+  });
+  write(output, program.localized);
 }
 
 export function cli(argv: string[], stdout: WriteStream= process.stdout) {
@@ -97,6 +127,26 @@ the message catalog will be written to the standard output.`)
       `Set the report address for msgid bugs. By default, the created POT \
 files have no Report-Msgid-Bugs-To fields.`, '')
     .action(gettextizeAction);
+
+  program
+    .command('translate')
+    .description('Writes a new asciidoc file by translating a given asciidoc file and .po file')
+    .option('-m, --master <path>',
+      'File containing the master document to translate.')
+    .option('-a, --attribute <name=value>',
+      'Define an attribute.', collect, [])
+    .option('-p, --po <path>',
+      'File with the message catalog to use to translate the master document.')
+    .option('-l, --localized <path>',
+      `File where the translated document should be written. If not given, \
+the translated document will be written to the standard output.`)
+    .action(translateAction);
+
+  program
+    .command('*')
+    .action(() => {
+      program.help();
+    });
 
   program.parse(argv);
 
