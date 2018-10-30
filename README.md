@@ -10,10 +10,6 @@ gettext/po string extraction tool for asciidoc documents.
 - Uses `asciidoctor.js` as parser.
 - Uses `gettext-parser` as .po generator.
 
-## THIS IS WORK IN PROGRESS
-
-Use at your own risk ;P
-
 ## Extracting
 
 Basic example
@@ -25,4 +21,12 @@ This will extract all texts from `master.adoc` and create `output.pot`.
 
 ## Injecting Translations
 
-TODO
+Basic example
+```
+$ asciidoctor-gettext translate -m path/to/master.adoc -p dutch.po -l output.adoc
+```
+
+This will create `output.adoc`, taking `master.adoc` and rewriting all localizable strings using the given `.po` file.
+Note that the resulting output document may be marked up slightly different compared to the input document. However,
+when transforming it `.html` (using `asciidoctor` itself) the output should be formatted the identically as the
+original.
