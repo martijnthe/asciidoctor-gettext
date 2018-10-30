@@ -1,6 +1,5 @@
 import { escapePipes, quoteAttributeValueIfNeeded, rewrite } from '../rewrite';
 import AsciiDoctorFactory from 'asciidoctor.js';
-import * as fs from 'fs';
 import Options = AsciiDoctorJs.Options;
 
 describe('rewrite', () => {
