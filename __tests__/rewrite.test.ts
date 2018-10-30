@@ -359,6 +359,28 @@ ifdef::revnumber[Asciidoc looks for the last ] in the string]
     expect(filter).toHaveBeenCalledWith('Asciidoc looks for the last ] in the string');
   });
 
+  it('rewrites conditionals within tables', () => {
+    // Note: this only works if the first row is NOT within conditionals!
+    const input = `
+:a: 49
+:b: 51
+
+|===
+|col 1a |col 2a
+ifeval::[{a}<=50]
+ifeval::[{b}>=50]
+|col 1b |col 2b
+endif::[]
+endif::[]
+|===
+`;
+    const filter = doRewrite(input);
+    expect(filter).toHaveBeenCalledWith('col 1a');
+    expect(filter).toHaveBeenCalledWith('col 2a');
+    expect(filter).toHaveBeenCalledWith('col 1b');
+    expect(filter).toHaveBeenCalledWith('col 2b');
+  });
+
   it('ignores comments', () => {
     const input = '// a single line comment\n////\n a multi\nline comment\n////';
     const filter = doRewrite(input);

@@ -9,7 +9,12 @@ import Image = AsciiDoctorJs.Image;
 import Table = AsciiDoctorJs.Table;
 import Attributes = AsciiDoctorJs.Attributes;
 import ListItem = AsciiDoctorJs.ListItem;
-import { ifBlockRewriterOpen, rewriteIncludeProcessor, rewritePreprocessor } from './conditionals';
+import {
+  ifBlockRewriteCellText,
+  ifBlockRewriterOpen,
+  rewriteIncludeProcessor,
+  rewritePreprocessor,
+} from './conditionals';
 import { nonLocalizableBuiltinAttributeKeys } from './attributes';
 import Options = AsciiDoctorJs.Options;
 import AttributeEntry = AsciiDoctorJs.AttributeEntry;
@@ -281,8 +286,16 @@ function rewriteBlock(block: AbstractBlock, transformer: RewriteTransformer, wri
             for (const cell of row) {
               const rowspan = isNil(cell.rowspan) ? 1 : cell.rowspan;
               const colspan = isNil(cell.colspan) ? 1 : cell.colspan;
-              const text = escapePipes(transformer(cell.text));
-              write(`${colspan}.${rowspan}+|${text}\n`);
+              let first = true;
+              const writeCellContent = (text: string) => {
+                if (first) {
+                  write(`${colspan}.${rowspan}+|`);
+                  first = false;
+                }
+                write(escapePipes(transformer(text.trim())));
+              };
+              ifBlockRewriteCellText(cell.text, writeCellContent, write, transformer);
+              write('\n');
             }
           }
         }
