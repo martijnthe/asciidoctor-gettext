@@ -1,11 +1,12 @@
 import WriteStream = NodeJS.WriteStream;
 import { Command } from 'commander';
 import { allBuiltinsAttributeFilter, extractFile } from './extract';
-import { po, TranslationEntry } from 'gettext-parser';
+import { po } from 'gettext-parser';
 import { translationObjectFromExtractions } from './adapter';
 import { writeFileSync, readFileSync } from 'fs';
 import Attributes = AsciiDoctorJs.Attributes;
 import { rewriteFile } from './rewrite';
+import AsciiDoctorFactory from 'asciidoctor.js';
 
 function getBlacklistRegexes(program: Command) {
   const blacklistRegexes = (program.ignore as string[]).map((pattern) => {
@@ -89,9 +90,26 @@ export function translateAction(program: Command): void {
     }
     return msgstr;
   };
-  const output = rewriteFile(program.master, transformer, {
+  const asciidocOptions = {
     attributes: getAttributes(program),
-  });
+  };
+
+  // Be prudent and check if the rewritten .html output is the same when using an identity transform:
+  function convertToHtml(input: string): string {
+    const asciidoctor = AsciiDoctorFactory();
+    return asciidoctor.convert(input, asciidocOptions);
+  }
+  const untranslatedOutput = rewriteFile(program.master, text => text, asciidocOptions);
+  const input = readFileSync(program.master, { encoding: 'utf8' });
+  if (convertToHtml(input) !== convertToHtml(untranslatedOutput)) {
+    process.stderr.write(`Translation failed. This is probably a bug in rewrite.ts.
+Please file a bug report and attaching the input asciidoc file.
+https://github.com/martijnthe/asciidoctor-gettext/issues/new`);
+    process.exit(2);
+    return;
+  }
+
+  const output = rewriteFile(program.master, transformer, asciidocOptions);
   write(output, program.localized);
 }
 
