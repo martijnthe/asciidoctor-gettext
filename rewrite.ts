@@ -37,7 +37,8 @@ interface ReWriteState {
   }[];
 }
 
-export function rewrite(text: string, transformer: RewriteTransformer, asciidocOptions: Options = {}): string {
+function rewriteCommon(text: string, isPath: boolean,
+                       transformer: RewriteTransformer, asciidocOptions: Options = {}): string {
   let outputText = '';
   function write(text: string) {
     outputText += text;
@@ -48,7 +49,8 @@ export function rewrite(text: string, transformer: RewriteTransformer, asciidocO
     this.preprocessor(rewritePreprocessor);
     this.includeProcessor(rewriteIncludeProcessor);
   });
-  const document = rewriteAsciidoctor.load(text, asciidocOptions);
+  const document = isPath ?
+    rewriteAsciidoctor.loadFile(text, asciidocOptions) : rewriteAsciidoctor.load(text, asciidocOptions);
 
   const state: ReWriteState = {
     listStack: [],
@@ -57,6 +59,14 @@ export function rewrite(text: string, transformer: RewriteTransformer, asciidocO
 
   rewriteAsciidoctor.Extensions.unregister(['rewrite']);
   return outputText;
+}
+
+export function rewrite(text: string, transformer: RewriteTransformer, asciidocOptions: Options = {}): string {
+  return rewriteCommon(text, false, transformer, asciidocOptions);
+}
+
+export function rewriteFile(inputPath: string, transformer: RewriteTransformer, asciidocOptions: Options = {}): string {
+  return rewriteCommon(inputPath, true, transformer, asciidocOptions);
 }
 
 const attributeQuoteNeededRegex = / |,|"|'/;

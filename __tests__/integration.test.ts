@@ -16,6 +16,7 @@ function run(args: string[]= []) {
 }
 
 const fixture = path.join(__dirname, 'fixture.adoc');
+const poFixture = path.join(__dirname, 'fixture.po');
 
 describe('asciidoctor-gettext', () => {
   it('prints help when no arguments are given', () => {
@@ -24,8 +25,14 @@ describe('asciidoctor-gettext', () => {
     expect(ret.stdout).toMatch('Usage: asciidoctor-gettext');
   });
 
+  it('prints help when unknown command is given', () => {
+    const ret = run(['foo']);
+    expect(ret.status).toEqual(0);
+    expect(ret.stdout).toMatch('Usage: asciidoctor-gettext');
+  });
+
   describe('gettextize', () => {
-    it('prints help when no arguments are given', function() {
+    it('prints help when no arguments are given', () => {
       const ret = run(['gettextize']);
       expect(ret.status).toEqual(0);
       expect(ret.stdout).toMatch(
@@ -115,5 +122,30 @@ Invalid regular expression: /(/: Unterminated group`);
       // message is emitted in the output.
       expect(ret.stdout).not.toMatch('Unresolved directive');
     });
+  });
+
+  describe('translate', () => {
+    it('prints help when no arguments are given', () => {
+      const ret = run(['translate']);
+      expect(ret.status).toEqual(0);
+      expect(ret.stdout).toMatch(
+        'Writes a new asciidoc file by translating a given asciidoc file and .po file');
+    });
+    it('writes to stdout when no -l is given', () => {
+      const ret = run(['translate', '-m', fixture, '-p', poFixture]);
+      expect(ret.stdout).toMatch(`= Dit is een voorbeeldtekst
+[[_dolor_sit_amet]]
+[]
+== Dolor sit amet
+[]
+Dit is een voorbeeldtekst die
+verspreid is over meerdere regels.
+
+
+include::{var1}/{var2}/bar.adoc[]
+`);
+      expect(ret.status).toEqual(0);
+    });
+
   });
 });

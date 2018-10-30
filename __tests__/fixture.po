@@ -1,0 +1,82 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+
+msgid "Caution"
+msgstr "Opgelet"
+
+msgid "Important"
+msgstr "Belangrijk"
+
+msgid "Note"
+msgstr "Noot"
+
+msgid "Tip"
+msgstr "Tip"
+
+msgid "Warning"
+msgstr "Waarschuwing"
+
+msgid "Example"
+msgstr "Voorbeeld"
+
+msgid "Figure"
+msgstr "Figuur"
+
+msgid "Table"
+msgstr "Tabel"
+
+msgid "Table of Contents"
+msgstr "Inhoudsopgave"
+
+msgid "Section"
+msgstr "Sectie"
+
+msgid "Part"
+msgstr "Deel"
+
+msgid "Chapter"
+msgstr "Hoofdstuk"
+
+msgid "Appendix"
+msgstr "Appendix"
+
+msgid "Untitled"
+msgstr "Geen Titel"
+
+msgid "Version"
+msgstr "Versie"
+
+msgid "Last updated"
+msgstr "Laast bijgewerkt"
+
+msgid "fixture.adoc"
+msgstr "fixture.adoc"
+
+msgid ".adoc"
+msgstr ".adoc"
+
+msgid "fixture"
+msgstr "fixture"
+
+msgid "Lorem ipsum"
+msgstr "Dit is een voorbeeldtekst"
+
+msgid "Dolor sit amet"
+msgstr ""
+
+msgid ""
+"Consectetuer adipiscing elit. Aenean commodo ligula eget dolor.\n"
+"Aenean massa."
+msgstr ""
+"Dit is een voorbeeldtekst die\n"
+"verspreid is over meerdere regels."
