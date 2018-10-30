@@ -95,14 +95,19 @@ function makePreprocessor(type: 'extract' | 'rewrite') {
 export const extractPreprocessor = makePreprocessor('extract');
 export const rewritePreprocessor = makePreprocessor('rewrite');
 
+function macroSourceFromIfData(jsonString: string, transformer: RewriteTransformer) {
+  const data: IfData = JSON.parse(jsonString) as IfData;
+  const shouldLocalize = ['ifdef', 'ifndef'].includes(data.type);
+  const conditionOrContent = shouldLocalize ? transformer(data.conditionOrContent) : data.conditionOrContent;
+  return `\n${data.type}::${data.def}[${conditionOrContent}]\n\n`;
+}
+
 export function ifBlockRewriterOpen(ifBlock: Block, transformer: RewriteTransformer, write: Write) {
   if (ifBlock.getRole() !== ifBlockRole) {
     return false;
   }
-  const data: IfData = JSON.parse(ifBlock.getSource()) as IfData;
-  const shouldLocalize = ['ifdef', 'ifndef'].includes(data.type);
-  const conditionOrContent = shouldLocalize ? transformer(data.conditionOrContent) : data.conditionOrContent;
-  write(`\n${data.type}::${data.def}[${conditionOrContent}]\n\n`);
+  const macroSource = macroSourceFromIfData(ifBlock.getSource(), transformer);
+  write(macroSource);
   return true;
 }
 
@@ -114,4 +119,23 @@ export function rewriteIncludeProcessor(this: IncludeProcessor) {
   this.handles((target) => {
     return true;
   });
+}
+
+export function ifBlockRewriteCellText(text: string, writeCellContent: (text: string) => void, write: Write,
+                                       transformer: RewriteTransformer): void {
+  const filterRegEx = /\[pass, role="__asciiDoctorGettextIfBlockHack__"\]\n([^\n]+)/g;
+  let cursor = 0;
+  while (true) {
+    const matches = filterRegEx.exec(text);
+    if (matches === null) {
+      writeCellContent(text.substr(cursor, text.length));
+      return;
+    }
+    const matchStart = filterRegEx.lastIndex - matches[0].length;
+    if (cursor < filterRegEx.lastIndex) {
+      writeCellContent(text.substring(cursor, matchStart));
+    }
+    write(macroSourceFromIfData(matches[1], transformer));
+    cursor = filterRegEx.lastIndex;
+  }
 }
