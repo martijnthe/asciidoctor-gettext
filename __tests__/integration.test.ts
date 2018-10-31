@@ -141,6 +141,10 @@ Invalid regular expression: /(/: Unterminated group`);
 Dit is een voorbeeldtekst die
 verspreid is over meerdere regels.
 
+[style=table,cols=1*]
+|===
+1.1+|
+|===
 
 include::{var1}/{var2}/bar.adoc[]
 `);

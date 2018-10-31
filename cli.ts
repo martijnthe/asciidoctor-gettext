@@ -84,6 +84,9 @@ export function translateAction(program: Command): void {
     if (!translationEntry) {
       return text;
     }
+    if (text === '') {
+      return '';
+    }
     const msgstr = translationEntry.msgstr[0];
     if (msgstr === '') {
       return text;

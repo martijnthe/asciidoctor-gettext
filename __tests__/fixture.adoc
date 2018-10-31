@@ -5,4 +5,9 @@
 Consectetuer adipiscing elit. Aenean commodo ligula eget dolor.
 Aenean massa.
 
+
+|===
+|
+|===
+
 include::{var1}/{var2}/bar.adoc[]
