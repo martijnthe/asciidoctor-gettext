@@ -54,7 +54,9 @@
     "test": "rm -rf .nyc_output/*.json && jest --collectCoverage"
   },
   "jest": {
-    "coverageReporters": ["json"],
+    "coverageReporters": [
+      "json"
+    ],
     "coverageDirectory": ".nyc_output",
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
@@ -64,7 +66,7 @@
       "/node_modules/",
       "/dist/"
     ],
-    "testEnvironment": "node",
+    "testEnvironment": "<rootDir>/opal-jest-environment.js",
     "moduleFileExtensions": [
       "ts",
       "tsx",
